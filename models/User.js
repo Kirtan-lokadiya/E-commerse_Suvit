@@ -1,0 +1,55 @@
+
+const mongoose = require('mongoose');
+const userValidationSchema = require('../validation/userValidation');
+
+const userSchema = new mongoose.Schema({
+  firstName: { type: String, required: true },
+  lastName: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  address: {
+    street: { type: String },
+    city: { type: String },
+    state: { type: String },
+    country: { type: String },
+    zip: { type: String }
+  },
+  phone: { type: String, required: true },
+  ordercount: { type: Number, default: 0 },
+  googleId: { type: String },
+  tokens: [{ type: String }],
+  role: { type: String, enum: ['admin',  'customer'], default: 'customer' },
+  location: {
+    type: { type: String },
+    coordinates: { type: [Number], default: [0, 0], required: true }
+  },
+  cart: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Product'
+}],
+
+  photo: { type: String }
+}, { timestamps: true });
+
+// Index location field for geospatial queries
+userSchema.index({ location: '2dsphere' });
+
+// Middleware to validate data before saving
+userSchema.pre('save', function (next) {
+  const user = this;
+  const validationResult = userValidationSchema.validate(user.toObject(), { abortEarly: false });
+  if (validationResult.error) {
+    const errorMessages = validationResult.error.details.map(detail => detail.message);
+    // Remove errors related to unnecessary fields
+    const filteredErrorMessages = errorMessages.filter(message => !['ordercount', '_id', 'createdAt', 'updatedAt', '__v'].includes(message.split('"')[1]));
+    if (filteredErrorMessages.length > 0) {
+      next(new Error(filteredErrorMessages.join(', ')));
+    } else {
+      next();
+    }
+  } else {
+    next();
+  }
+});
+
+module.exports = mongoose.model('User', userSchema);
