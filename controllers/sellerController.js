@@ -54,18 +54,30 @@ const updatesellerLocation = async (req, res) => {
 };
 const getAllSellers = async (req, res) => {
   try {
-    // Query all sellers from the database
-    const sellers = await Sellers.find();
+    // Query all sellers from the database and select only required fields
+    const sellers = await Sellers.find({}, 'firstName lastName email');
 
     // Populate each seller's products
     await Sellers.populate(sellers, { path: 'products', model: 'Product' });
+
     const totalSellersCount = await Sellers.countDocuments();
 
-
-    res.json({sellers,totalSellersCount});
+    res.json({ sellers, totalSellersCount });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
 
-module.exports = { signup, login, updatesellerLocation,getAllSellers };
+const deleteSeller = async (req, res) => {
+  try {
+    const sellerId = req.params.id;
+    // Find the seller by ID and delete it
+    await Sellers.findByIdAndDelete(sellerId);
+    res.status(200).json({ message: 'Seller deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting seller:', error);
+    res.status(500).json({ error: 'Error deleting seller' });
+  }
+};
+
+module.exports = { signup, login, updatesellerLocation,getAllSellers,deleteSeller };

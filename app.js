@@ -6,6 +6,7 @@ const passport = require('passport');
 const config = require('./config/config');
 const cors = require('cors');
 
+
 require('./config/passport'); // Ensure passport config is required
 
 // Import routes

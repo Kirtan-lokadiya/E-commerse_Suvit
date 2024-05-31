@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const Token = require('./Token');
 
 const sellerSchema = new mongoose.Schema({
   firstName: { type: String, required: true },
@@ -22,10 +23,30 @@ const sellerSchema = new mongoose.Schema({
     type: { type: String, enum: ['Point'], default: 'Point' },
     coordinates: { type: [Number], required: true }
   },
-  photo: { type: String }
+  photo: { type: String },
+  deleted: { type: Boolean, default: false } // Soft delete flag
 }, { timestamps: true });
 
 // Index location field for geospatial queries
 sellerSchema.index({ location: '2dsphere' });
+
+// Middleware to soft delete associated products and hard delete token when seller is removed
+sellerSchema.pre('remove', { document: true }, async function(next) {
+  try {
+    if (!this.deleted) {
+      // Soft delete products associated with this seller
+      await mongoose.models.Product.updateMany({ seller: this._id }, { $set: { deleted: true } });
+      
+      // Find and hard delete the token associated with this seller
+      const token = await Token.findOne({ userId: this._id });
+      if (token) {
+        await token.remove();
+      }
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 module.exports = mongoose.model('Seller', sellerSchema);

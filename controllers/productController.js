@@ -1,6 +1,103 @@
 const productService = require('../services/productService');
-const Product = require('../models/Product')
-const User = require('../models/User')
+const Product = require('../models/Product');
+const User = require('../models/User');
+const Category = require('../models/Category');
+const path = require('path');
+const createProduct = async (req, res) => {
+  try {
+    const { name, description, price, stock, categoryId, subcategoryId } = req.body;
+    const sellerId = req.user.id; // Assuming the authenticated user is a seller
+
+    // Validate that required fields are present
+    if (!name || !description || !price || !stock || !categoryId || !subcategoryId || !req.files || Object.keys(req.files).length === 0) {
+      return res.status(400).json({ error: 'All fields are required and at least one image must be uploaded' });
+    }
+
+    // Handle the uploaded files
+    const imageUrls = [];
+    const promises = [];
+    for (const key in req.files) {
+      if (Object.hasOwnProperty.call(req.files, key)) {
+        const element = req.files[key];
+        const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+        const filename = `${element.name}-${uniqueSuffix}${path.extname(element.name)}`;
+        const filePath = path.join(__dirname, `../uploads/${filename}`);
+        
+        promises.push(new Promise((resolve, reject) => {
+          element.mv(filePath, (err) => {
+            if (err) {
+              console.error('Error uploading file:', err);
+              reject(err);
+            } else {
+              imageUrls.push(`/uploads/${filename}`);
+              resolve();
+            }
+          });
+        }));
+      }
+    }
+
+    // Wait for all file upload promises to resolve
+    await Promise.all(promises);
+
+    // Create the product
+    const product = await productService.createProduct({ 
+      name, 
+      description, 
+      price, 
+      stock, 
+      category:categoryId, 
+      subcategory:subcategoryId, 
+      imageUrls, // Store the array of image URLs in the database
+      seller: sellerId 
+    });
+
+    res.status(201).json("Product created successfully");
+  } catch (error) {
+    console.error('Error creating product:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+
+const updateProduct = async (req, res) => {
+  try {
+    const productId = req.params.productId;
+    const sellerId = req.user._id; 
+
+    const product = await Product.findOne({ _id: productId, seller: sellerId });
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found or not authorized to update this product' });
+    }
+
+    // Update the product
+    Object.assign(product, req.body);
+    const updatedProduct = await product.save();
+
+    res.json(updatedProduct);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const deleteProduct = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const sellerId = req.user._id; // Assuming the authenticated user is a seller
+
+    // Find the product by ID and ensure it belongs to the seller
+    const product = await Product.findOne({ _id: productId, seller: sellerId });
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found or not authorized to delete this product' });
+    }
+
+    // Delete the product
+    await Product.deleteOne({ _id: productId });
+    res.json({ message: 'Product deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
 const getAllProducts = async (req, res) => {
   try {
@@ -51,7 +148,6 @@ const getProductsByCategory = async (req, res) => {
   }
 };
 
-
 const getProductDetails = async (req, res) => {
   try {
     const productId = req.params.productId;
@@ -65,79 +161,23 @@ const getProductDetails = async (req, res) => {
   }
 };
 
-const getFeaturedProductsByCategory = async (req, res) => {
+const getTrendingProductsByCategory = async (req, res) => {
+  const { categoryName } = req.params;
   try {
-    const { category } = req.query;
+    // Find the main category by name
+    const mainCategory = await Category.findOne({ name: categoryName });
 
-    if (!category) {
-      return res.status(400).json({ error: 'Category is required' });
+    // If category doesn't exist, return error
+    if (!mainCategory) {
+      return res.status(404).json({ error: 'Category not found' });
     }
 
-    const products = await Product.find({ category, featured: true });
+    // Find trending products in the specified category
+    const trendingProducts = await Product.find({ category: mainCategory._id, featured: true });
 
-    res.status(200).json(products);
+    res.json({ category: mainCategory.name, trendingProducts });
   } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-const createProduct = async (req, res) => {
-  try {
-    const { name, description, price, stock, category, imageUrl } = req.body;
-    const sellerId = req.user.id; // Assuming the authenticated user is a seller
-
-    const product = await productService.createProduct({ 
-      name, 
-      description, 
-      price, 
-      stock, 
-      category, 
-      imageUrl,
-      seller: sellerId 
-    });
-
-    res.status(201).json(product);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
-
-
-const updateProduct = async (req, res) => {
-  try {
-    const productId = req.params.productId;
-    const sellerId = req.user._id; 
-  
-    const product = await Product.findOne({ _id: productId, seller: sellerId });
-    if (!product) {
-      return res.status(404).json({ error: 'Product not found or not authorized to update this product' });
-    }
-
-    // Update the product
-    Object.assign(product, req.body);
-    const updatedProduct = await product.save();
-
-    res.json(updatedProduct);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
-const deleteProduct = async (req, res) => {
-  try {
-    const productId = req.params.id;
-    const sellerId = req.user._id; // Assuming the authenticated user is a seller
-
-    // Find the product by ID and ensure it belongs to the seller
-    const product = await Product.findOne({ _id: productId, seller: sellerId });
-    if (!product) {
-      return res.status(404).json({ error: 'Product not found or not authorized to delete this product' });
-    }
-
-    // Delete the product
-    await Product.deleteOne({ _id: productId });
-    res.json({ message: 'Product deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 };
 
@@ -150,6 +190,7 @@ const getSellerProducts = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 const addToCart = async (req, res) => {
   try {
     const { productId } = req.body;
@@ -175,8 +216,6 @@ const addToCart = async (req, res) => {
   }
 };
 
-
-
 const deleteFromCart = async (req, res) => {
   try {
     const { productId } = req.params;
@@ -192,6 +231,7 @@ const deleteFromCart = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
 const getCartItems = async (req, res) => {
   try {
     // Fetch the authenticated user and populate the cart array with products
@@ -220,4 +260,34 @@ const getCartItems = async (req, res) => {
   }
 };
 
-module.exports = { getAllProducts,getProductDetails, getCartItems, getProductsByCategory, getFeaturedProductsByCategory,createProduct, updateProduct, deleteProduct, getSellerProducts , addToCart, deleteFromCart};
+const getAllProductsforAdmin = async (req, res) => {
+  try {
+    const products = await Product.find({})
+      .populate({
+        path: 'seller',
+        select: 'firstName lastName email'
+      })
+      .exec();
+
+    res.status(200).json(products);
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    res.status(500).json({ error: 'Error fetching products' });
+  }
+};
+
+module.exports = {
+  getAllProducts,
+  getProductDetails,
+  getCartItems,
+  getProductsByCategory,
+  getTrendingProductsByCategory,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  getSellerProducts,
+  getAllProductsforAdmin,
+  addToCart,
+  deleteFromCart,
+  
+};

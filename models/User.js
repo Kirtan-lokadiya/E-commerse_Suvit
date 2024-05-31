@@ -1,6 +1,7 @@
 
 const mongoose = require('mongoose');
 const userValidationSchema = require('../validation/userValidation');
+const Token = require('./Token');
 
 const userSchema = new mongoose.Schema({
   firstName: { type: String, required: true },
@@ -51,5 +52,18 @@ userSchema.pre('save', function (next) {
     next();
   }
 });
+userSchema.pre('remove', async function(next) {
+  try {
+    // Find and delete the token associated with this seller
+    const token = await Token.findOne({ userId: this._id });
+    if (token) {
+      await token.remove();
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 
 module.exports = mongoose.model('User', userSchema);

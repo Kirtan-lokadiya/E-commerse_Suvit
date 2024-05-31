@@ -1,5 +1,6 @@
 // app/services/categoryService.js
 const Category = require('../models/Category');
+const SubCategory = require('../models/Subcategory');
 
 const getMainCategories = async () => {
   try {
@@ -13,7 +14,7 @@ const getMainCategories = async () => {
 
 const getSubcategoriesOfMainCategory = async (mainCategoryId) => {
   try {
-    const subcategories = await Category.find({ parentCategory: mainCategoryId });
+    const subcategories = await SubCategory.find({ parentCategory: mainCategoryId });
     return subcategories;
   } catch (error) {
     console.error("Error fetching subcategories:", error);

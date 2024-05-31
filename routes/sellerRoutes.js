@@ -2,9 +2,11 @@ const express = require('express');
 const { body } = require('express-validator');
 const sellerController = require('../controllers/sellerController');
 const validationMiddleware = require('../middlewares/validationMiddleware');
+const authMiddleware = require('../middlewares/authMiddleware');
 const sellerMiddleware = require('../middlewares/sellerMiddleware');
 const productController = require('../controllers/productController');
 const router = express.Router();
+const isAdmin = require('../middlewares/isAdmin')
 
 router.post('/signup',
   body('firstName').notEmpty().withMessage('First name is required'),
@@ -39,6 +41,8 @@ router.put('/location',
 );
 
 router.get('/products', sellerMiddleware, productController.getSellerProducts);
+router.delete('/delete/:id', authMiddleware,isAdmin, sellerController.deleteSeller);
+
 
 
 module.exports = router;

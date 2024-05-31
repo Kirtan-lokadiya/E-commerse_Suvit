@@ -1,7 +1,6 @@
 const Product = require('../models/Product');
 const Seller = require('../models/Seller');
 
-
 const getAllProducts = async () => {
   return await Product.find().populate('seller');
 };
@@ -28,9 +27,18 @@ const getProductsByCustomerLocation = async (coordinates) => {
   return products;
 };
 
-const createProduct = async (productData) => {
-  const product = new Product(productData);
-  return await product.save();
+const createProduct = async ({ name, description, price, stock, category, subcategory, imageUrls, seller }) => {
+  const newProduct = new Product({
+    name,
+    description,
+    price,
+    stock,
+    category,
+    subcategory,
+    imageUrls,
+    seller
+  });
+  return await newProduct.save();
 };
 
 
@@ -38,4 +46,4 @@ const getSellerProducts = async (sellerId) => {
   return await Product.find({ seller: sellerId });
 };
 
-module.exports = { getAllProducts, getProductsByCustomerLocation, createProduct,   getSellerProducts };
+module.exports = { getAllProducts, getProductsByCustomerLocation, createProduct, getSellerProducts };
