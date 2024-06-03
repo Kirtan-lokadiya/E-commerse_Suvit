@@ -39,7 +39,9 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Connect to MongoDB
-mongoose.connect(config.mongodbUrl)
+mongoose.connect(config.mongodbUrl, {
+  family: 4 // Force to use IPv4
+})
   .then(() => {
     console.log('Connected to MongoDB');
   })
@@ -65,6 +67,7 @@ app.use((err, req, res, next) => {
 });
 
 // Start the server
+// const port = config.port;
 const port = config.port;
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

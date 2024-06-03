@@ -1,7 +1,12 @@
-
 const mongoose = require('mongoose');
 const userValidationSchema = require('../validation/userValidation');
 const Token = require('./Token');
+
+// Define a sub-schema for cart items
+const cartItemSchema = new mongoose.Schema({
+  product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+  quantity: { type: Number, required: true, min: 1 }
+});
 
 const userSchema = new mongoose.Schema({
   firstName: { type: String, required: true },
@@ -19,16 +24,12 @@ const userSchema = new mongoose.Schema({
   ordercount: { type: Number, default: 0 },
   googleId: { type: String },
   tokens: [{ type: String }],
-  role: { type: String, enum: ['admin',  'customer'], default: 'customer' },
+  role: { type: String, enum: ['admin', 'customer'], default: 'customer' },
   location: {
     type: { type: String },
     coordinates: { type: [Number], default: [0, 0], required: true }
   },
-  cart: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Product'
-}],
-
+  cart: [cartItemSchema],
   photo: { type: String }
 }, { timestamps: true });
 
@@ -52,9 +53,10 @@ userSchema.pre('save', function (next) {
     next();
   }
 });
+
 userSchema.pre('remove', async function(next) {
   try {
-    // Find and delete the token associated with this seller
+    // Find and delete the token associated with this user
     const token = await Token.findOne({ userId: this._id });
     if (token) {
       await token.remove();
@@ -64,6 +66,5 @@ userSchema.pre('remove', async function(next) {
     next(error);
   }
 });
-
 
 module.exports = mongoose.model('User', userSchema);

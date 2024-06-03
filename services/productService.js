@@ -5,10 +5,8 @@ const getAllProducts = async () => {
   return await Product.find().populate('seller');
 };
 
-
-
 const getProductsByCustomerLocation = async (coordinates, filters) => {
-  const { minPrice, maxPrice, subcategoryId, sortBy, sortOrder, page, limit } = filters;
+  const { minPrice, maxPrice, categoryId, subcategoryId, sortBy, sortOrder, page, limit } = filters;
 
   // Step 1: Find sellers near the customer's location
   const sellers = await Seller.find({
@@ -30,6 +28,10 @@ const getProductsByCustomerLocation = async (coordinates, filters) => {
     seller: { $in: sellerIds },
     price: { $gte: minPrice, $lte: maxPrice }
   };
+
+  if (categoryId) {
+    productQuery.category = categoryId; // Add category filter
+  }
 
   if (subcategoryId) {
     productQuery.subcategory = subcategoryId;
@@ -55,23 +57,14 @@ const getProductsByCustomerLocation = async (coordinates, filters) => {
   // Step 5: Total count for pagination
   const totalProducts = await Product.countDocuments(productQuery);
 
-  // Step 6: Group products by category
-  const groupedProducts = products.reduce((acc, product) => {
-    const categoryName = product.category.name;
-    if (!acc[categoryName]) {
-      acc[categoryName] = [];
-    }
-    acc[categoryName].push(product);
-    return acc;
-  }, {});
-
   return {
     totalProducts,
     totalPages: Math.ceil(totalProducts / limit),
     currentPage: page,
-    products: groupedProducts
+    products // Return products directly without grouping
   };
 };
+
 
 const createProduct = async ({ name, description, price, stock, category, subcategory, imageUrls, seller,featured }) => {
   const newProduct = new Product({

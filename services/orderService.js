@@ -10,20 +10,20 @@ const razorpay = new Razorpay({
 });
 
 const calculateTotalAmount = (cart) => {
-  return cart.reduce((total, item) => total + item.price * item.quantity, 0) * 100; 
+  return cart.reduce((total, item) => total + item.product.price * item.quantity, 0) * 100; 
 };
 
 const generateLineItems = (cart) => {
   return cart.map(item => ({
-    item_id: item._id,
-    item_name: item.name,
-    amount: item.price * 100, // Convert to paise
+    item_id: item.product._id,
+    item_name: item.product.name,
+    amount: item.product.price ,
     quantity: item.quantity
   }));
 };
 
 const createOrder = async (userId) => {
-  const user = await User.findById(userId).populate('cart');
+  const user = await User.findById(userId).populate('cart.product');
 
   if (!user || !user.cart || user.cart.length === 0) {
     throw new Error('Cart is empty');
@@ -53,9 +53,9 @@ const createOrder = async (userId) => {
   const order = new Order({
     user: userId,
     products: cart.map(item => ({
-      product: item._id,
+      product: item.product._id,
       quantity: item.quantity,
-      price: item.price
+      price: item.product.price
     })),
     totalAmount: totalAmount / 100, // Convert back to INR
     transaction: transaction._id

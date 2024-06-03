@@ -6,9 +6,6 @@ const validationMiddleware = require('../middlewares/validationMiddleware');
 const isAdmin = require('../middlewares/isAdmin')
 const router = express.Router();
 
-router.get('/trending', productController.getTrendingProductsByCategory);
-router.get('/allProducts', authMiddleware , isAdmin, productController.getAllProductsforAdmin);
-
 
 router.post('/getproducts',
   body('coordinates').isArray({ min: 2, max: 2 }).withMessage('Coordinates must be an array of two numbers'),
@@ -24,6 +21,9 @@ router.post('/getproducts',
   authMiddleware,
   productController.getAllProducts
 );
+router.get('/trending', productController.getTrendingProductsByCategory);
+router.get('/allProducts', authMiddleware , isAdmin, productController.getAllProductsforAdmin);
+
 router.get('/cart', authMiddleware, productController.getCartItems);
 
 router.get('/:productId', productController.getProductDetails);
