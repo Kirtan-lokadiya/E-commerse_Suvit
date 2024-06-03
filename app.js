@@ -6,9 +6,6 @@ const passport = require('passport');
 const config = require('./config/config');
 const cors = require('cors');
 
-
-require('./config/passport'); // Ensure passport config is required
-
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const sellerproductRoutes = require('./routes/sellerproductRoutes');
@@ -20,8 +17,7 @@ const wishlistRoutes = require('./routes/wishlistRoutes');
 const commentRoutes = require('./routes/commentRoutes'); 
 const categoryRoutes = require('./routes/categoryRoutes');
 
-
-
+require('./config/passport'); // Ensure passport config is required
 
 // Initialize Express app
 const app = express();
@@ -32,6 +28,8 @@ app.use(cors({
 
 // Middleware
 app.use(bodyParser.json());
+app.use('/uploads', express.static('uploads'));
+
 app.use(session({
   secret: config.jwtSecret,
   resave: false,
@@ -41,11 +39,13 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Connect to MongoDB
-mongoose.connect(config.mongodbUrl).then(() => {
-  console.log('Connected to MongoDB');
-}).catch((error) => {
-  console.error('Error connecting to MongoDB:', error);
-});
+mongoose.connect(config.mongodbUrl)
+  .then(() => {
+    console.log('Connected to MongoDB');
+  })
+  .catch((error) => {
+    console.error('Error connecting to MongoDB:', error);
+  });
 
 // Use routes
 app.use('/api/auth/customer', authRoutes); 
@@ -54,11 +54,9 @@ app.use('/api/users-update', userRoutes);
 app.use('/api/seller/products', sellerproductRoutes);
 app.use('/api/customer/products', customerproductRoutes);
 app.use('/api/wishlist', wishlistRoutes); 
-// app.use('/api/orders', orderRoutes);
+app.use('/api/orders', orderRoutes);  // Ensure orders route is used
 app.use('/api/comments', commentRoutes); 
 app.use('/api/categories', categoryRoutes);
-
-
 
 // Error handling middleware
 app.use((err, req, res, next) => {

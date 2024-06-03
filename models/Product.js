@@ -9,7 +9,7 @@ const productSchema = new mongoose.Schema({
   subcategory: { type: mongoose.Schema.Types.ObjectId, ref: 'Subcategory', required: true },
   seller: { type: mongoose.Schema.Types.ObjectId, ref: 'Seller', required: true },
   imageUrls: [{type: String }],
-  featured: { type: Boolean, default: false },
+  featured: { type: Boolean },
   brand: { type: String }, 
 }, { timestamps: true });
 

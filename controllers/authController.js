@@ -1,4 +1,5 @@
 const authService = require('../services/authService');
+const Token = require('../models/Token')
 
 const signup = async (req, res) => {
   try {
@@ -18,4 +19,19 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { signup, login };
+
+const  logout = async (req, res) => {
+  
+    
+    const userId = req.user._id; 
+    
+    try {
+        await Token.deleteOne({ userId: userId });
+        res.json({ message: "Logout successful" });
+    } catch (error) {
+        console.error('Error during logout:', error);
+        res.status(500).json({ error: 'Something went wrong!' });
+    }
+};
+
+module.exports = { signup, login, logout };

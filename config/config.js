@@ -10,4 +10,5 @@ module.exports = {
   razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET,
   googleClientID: process.env.GOOGLE_CLIENT_ID,
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
+
 };

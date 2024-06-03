@@ -1,14 +1,12 @@
 const Razorpay = require('razorpay');
 const User = require('../models/User');
-const Order = require('../models/Order');
-const Transaction = require('../models/Transaction');
 const config = require('../config/config');
 
-const razorpay = new Razorpay({
-  key_id: config.razorpayKeyId,
-  key_secret: config.razorpayKeySecret
-});
 
+const razorpay = new Razorpay({
+    key_id: config.razorpayKeyId,
+    key_secret: config.razorpayKeySecret
+  });
 const calculateTotalAmount = (cart) => {
   return cart.reduce((total, item) => total + item.price * item.quantity, 0) * 100; 
 };
@@ -39,33 +37,11 @@ const createOrder = async (userId) => {
     payment_capture: 1
   };
 
-  const razorpayOrder = await razorpay.orders.create(options);
-
-  const transaction = new Transaction({
-    razorpayOrderId: razorpayOrder.id,
-    user: userId,
-    amount: totalAmount,
-    status: 'created'
-  });
-
-  await transaction.save();
-
-  const order = new Order({
-    user: userId,
-    products: cart.map(item => ({
-      product: item._id,
-      quantity: item.quantity,
-      price: item.price
-    })),
-    totalAmount: totalAmount / 100, // Convert back to INR
-    transaction: transaction._id
-  });
-
-  await order.save();
+  const response = await razorpay.orders.create(options);
 
   const magicCheckoutOptions = {
-    key: config.razorpayKeyId,
-    order_id: razorpayOrder.id,
+    key: 'rzp_test_QcTBERZ8hbCIx4',
+    order_id: response.id,
     name: 'Your Company Name',
     description: 'Payment for your order',
     image: 'https://example.com/your_logo.jpg',
@@ -75,7 +51,7 @@ const createOrder = async (userId) => {
       contact: user.phone
     },
     notes: {
-      'shopping_order_id': razorpayOrder.receipt
+      'shopping_order_id': response.receipt
     },
     theme: {
       color: '#3399cc'

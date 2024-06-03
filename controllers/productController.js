@@ -5,14 +5,14 @@ const Category = require('../models/Category');
 const path = require('path');
 const createProduct = async (req, res) => {
   try {
-    const { name, description, price, stock, categoryId, subcategoryId } = req.body;
+    const { name, description, price, stock, categoryId, subcategoryId, featured } = req.body;
     const sellerId = req.user.id; // Assuming the authenticated user is a seller
-
+    
     // Validate that required fields are present
     if (!name || !description || !price || !stock || !categoryId || !subcategoryId || !req.files || Object.keys(req.files).length === 0) {
       return res.status(400).json({ error: 'All fields are required and at least one image must be uploaded' });
     }
-
+    
     // Handle the uploaded files
     const imageUrls = [];
     const promises = [];
@@ -36,10 +36,10 @@ const createProduct = async (req, res) => {
         }));
       }
     }
-
+    
     // Wait for all file upload promises to resolve
     await Promise.all(promises);
-
+    
     // Create the product
     const product = await productService.createProduct({ 
       name, 
@@ -48,8 +48,9 @@ const createProduct = async (req, res) => {
       stock, 
       category:categoryId, 
       subcategory:subcategoryId, 
-      imageUrls, // Store the array of image URLs in the database
-      seller: sellerId 
+      imageUrls, 
+      seller: sellerId ,
+      featured
     });
 
     res.status(201).json("Product created successfully");
@@ -99,54 +100,28 @@ const deleteProduct = async (req, res) => {
   }
 };
 
+
 const getAllProducts = async (req, res) => {
   try {
     const { coordinates } = req.body;
-    const products = await productService.getProductsByCustomerLocation(coordinates);
-    res.json(products);
+    const filters = {
+      minPrice: req.query.minPrice || 0,
+      maxPrice: req.query.maxPrice || 50000,
+      subcategoryId: req.query.subcategoryId,
+      sortBy: req.query.sortBy || 'price',
+      sortOrder: req.query.sortOrder || 'asc',
+      page: parseInt(req.query.page, 10) || 1,
+      limit: parseInt(req.query.limit, 10) || 10
+    };
+
+    const result = await productService.getProductsByCustomerLocation(coordinates, filters);
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-const getProductsByCategory = async (req, res) => {
-  try {
-    const { category, subCategory, page = 1, limit = 10, brand, priceMin, priceMax, sort } = req.query;
 
-    // Construct query object based on filters
-    const query = { category };
-    if (subCategory) query.subCategory = subCategory;
-    if (brand) query.brand = brand;
-    if (priceMin && priceMax) {
-      query.price = { $gte: priceMin, $lte: priceMax };
-    } else if (priceMin) {
-      query.price = { $gte: priceMin };
-    } else if (priceMax) {
-      query.price = { $lte: priceMax };
-    }
-
-    // Sorting
-    const sortOptions = {};
-    if (sort === 'ascending') {
-      sortOptions.price = 1;
-    } else if (sort === 'descending') {
-      sortOptions.price = -1;
-    }
-
-    // Calculate skip value for pagination
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
-    // Find products based on the constructed query
-    const products = await Product.find(query)
-      .sort(sortOptions)
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    res.status(200).json(products);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
 
 const getProductDetails = async (req, res) => {
   try {
@@ -162,24 +137,28 @@ const getProductDetails = async (req, res) => {
 };
 
 const getTrendingProductsByCategory = async (req, res) => {
-  const { categoryName } = req.params;
   try {
-    // Find the main category by name
-    const mainCategory = await Category.findOne({ name: categoryName });
+    const categories = await Category.find({});
 
-    // If category doesn't exist, return error
-    if (!mainCategory) {
-      return res.status(404).json({ error: 'Category not found' });
+    const trendingProductsByCategory = [];
+
+    for (const category of categories) {
+      const trendingProducts = await Product.aggregate([
+        { $match: { category: category._id, featured: true } },
+      ]);
+
+      trendingProductsByCategory.push({
+        category: category.name,
+        trendingProducts
+      });
     }
 
-    // Find trending products in the specified category
-    const trendingProducts = await Product.find({ category: mainCategory._id, featured: true });
-
-    res.json({ category: mainCategory.name, trendingProducts });
+    res.json(trendingProductsByCategory);
   } catch (error) {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
 
 const getSellerProducts = async (req, res) => {
   try {
@@ -249,8 +228,8 @@ const getCartItems = async (req, res) => {
       name: item.name,
       description: item.description,
       price: item.price,
-      imageUrl: item.imageUrl
-      // Add other product details as needed
+      imageUrls: item.imageUrls
+ 
     }));
 
     res.status(200).json(cartItems);
@@ -280,7 +259,7 @@ module.exports = {
   getAllProducts,
   getProductDetails,
   getCartItems,
-  getProductsByCategory,
+  
   getTrendingProductsByCategory,
   createProduct,
   updateProduct,
