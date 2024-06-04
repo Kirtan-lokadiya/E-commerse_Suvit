@@ -4,8 +4,8 @@ const Token = require('./Token');
 
 // Define a sub-schema for cart items
 const cartItemSchema = new mongoose.Schema({
-  product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
-  quantity: { type: Number, required: true, min: 1 }
+  product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
+  quantity: { type: Number,  min: 1 }
 });
 
 const userSchema = new mongoose.Schema({

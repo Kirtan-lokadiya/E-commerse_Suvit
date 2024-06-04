@@ -30,6 +30,7 @@ router.get('/:productId', productController.getProductDetails);
 
 
 router.post('/add-to-cart', authMiddleware, productController.addToCart);
+router.put('/cart', authMiddleware, productController.updateCartItemQuantity);
 
 router.delete('/delete-from-cart/:productId', authMiddleware, productController.deleteFromCart);
 
