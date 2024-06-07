@@ -24,4 +24,10 @@ router.put('/update-location',
   userController.updateUserLocation
 );
 
+
+router.get('/details',authMiddleware, userController.getUserDetails);
+router.get('/search',authMiddleware, userController.searchUsers);
+
+
+
 module.exports = router;

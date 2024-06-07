@@ -23,7 +23,6 @@ const userSchema = new mongoose.Schema({
   phone: { type: String, required: true },
   ordercount: { type: Number, default: 0 },
   googleId: { type: String },
-  tokens: [{ type: String }],
   role: { type: String, enum: ['admin', 'customer'], default: 'customer' },
   location: {
     type: { type: String },
