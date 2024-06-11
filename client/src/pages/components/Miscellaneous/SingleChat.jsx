@@ -9,7 +9,7 @@ import { io } from "socket.io-client";
 import axiosInstance from "../../../axiosInstance";
 
 // const ENDPOINT = "http://192.168.20.173:5000";
-const ENDPOINT = "https://e-commerce-project-gwmh.onrender.com";
+const ENDPOINT = "https://e-commerce-suvit.onrender.com";
 let socket, selectedChatCompare;
 
 function SingleChat({
