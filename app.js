@@ -53,7 +53,6 @@ app.use(passport.session());
 
 // Connect to MongoDB
 mongoose.connect(config.mongodbUrl, {
-  family: 4 // Force to use IPv4
 })
   .then(() => {
     console.log('Connected to MongoDB');
