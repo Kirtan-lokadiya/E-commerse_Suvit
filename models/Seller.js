@@ -24,7 +24,8 @@ const sellerSchema = new mongoose.Schema({
     coordinates: { type: [Number], required: true }
   },
   photo: { type: String },
-  deleted: { type: Boolean, default: false } // Soft delete flag
+  deleted: { type: Boolean, default: false }, // Soft delete flag
+  socketId: { type: String } // Add this field to store socket ID
 }, { timestamps: true });
 
 // Index location field for geospatial queries
@@ -36,7 +37,7 @@ sellerSchema.pre('remove', { document: true }, async function(next) {
     if (!this.deleted) {
       // Soft delete products associated with this seller
       await mongoose.models.Product.updateMany({ seller: this._id }, { $set: { deleted: true } });
-      
+
       // Find and hard delete the token associated with this seller
       const token = await Token.findOne({ userId: this._id });
       if (token) {

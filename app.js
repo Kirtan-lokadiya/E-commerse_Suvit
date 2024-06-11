@@ -1,15 +1,15 @@
 const express = require('express');
+const http = require('http');
+const socketio = require('socket.io');
 const mongoose = require('mongoose');
-const {ObjectId} = require('mongodb');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 const passport = require('passport');
 const config = require('./config/config');
 const cors = require('cors');
-const chatRoutes = require('./routes/chatRoutes');
-const socketio = require('socket.io');
-const http = require('http');
-const ChatMessage = require('./models/ChatMessage'); 
+const ChatMessage = require('./models/ChatMessage');
+const Group = require('./models/GroupSchema'); // Import Group model
+const Seller = require('./models/Seller'); // Import Seller model
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
@@ -21,9 +21,9 @@ const wishlistRoutes = require('./routes/wishlistRoutes');
 const commentRoutes = require('./routes/commentRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const checkoutRoutes = require('./routes/checkoutRoutes');
-const { log } = require('console');
+const chatRoutes = require('./routes/chatRoutes');
 
-require('./config/passport'); 
+require('./config/passport');
 
 const app = express();
 
@@ -32,7 +32,8 @@ const io = socketio(server, {
   pingTimeout: 60000,
   cors: {
     origin: ['http://192.168.20.169:3000', 'http://localhost:3000']
-}});
+  }
+});
 
 app.use(cors({
   origin: ['http://192.168.20.169:3000', 'http://localhost:3000']
@@ -63,32 +64,39 @@ mongoose.connect(config.mongodbUrl, {
 
 // Socket.io
 io.on('connection', (socket) => {
-  console.log('New client connected',socket.id);
+  console.log('New client connected', socket.id);
 
+  // Save seller's socket ID when they connect
+  socket.on('registerSeller', async (sellerId) => {
+    try {
+      const updatedSeller = await Seller.findByIdAndUpdate(sellerId, { socketId: socket.id }, { new: true });
+      if (updatedSeller) {
+        console.log(`Seller ${sellerId} registered with socket ID ${socket.id}`);
+      } else {
+        console.log(`Seller with ID ${sellerId} not found or connection through admin`);
+      }
+    } catch (error) {
+      console.error('Error registering seller:', error);
+    }
+  });
 
   socket.on('chat message', async (msg) => {
     const { senderId, receiverId, message } = msg;
-    
-    try {
-      // Convert senderId and receiverId to ObjectId type
-      const senderObjectId =new ObjectId(senderId);
-      const receiverObjectId = new ObjectId(receiverId);
 
-      // Create a new ChatMessage document
+    try {
+      const senderObjectId = mongoose.Types.ObjectId(senderId);
+      const receiverObjectId = mongoose.Types.ObjectId(receiverId);
+
       const chatMessage = new ChatMessage({
         senderId: senderObjectId,
         receiverId: receiverObjectId,
         message: message
       });
 
-      // Save the message to the database
       await chatMessage.save();
 
-    
       if (receiverId) {
-        // console.log(`chat message with this id ${senderId} + ${receiverId}`);
         io.emit(`chat message ${senderId} ${receiverId}`, msg);
-        
       } else {
         console.log(`Receiver socket with ID ${receiverId} not found.`);
       }
@@ -97,8 +105,37 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('disconnect', () => {
-    console.log('Client disconnected');
+  // Broadcast message from admin to all sellers
+  socket.on('broadcast message', async (data) => {
+    const { adminId, message } = data;
+
+    try {
+      const sellers = await Seller.find({ deleted: false });
+      const receiverIds = sellers.map(seller => seller._id);
+
+      const groupMessage = new Group({
+        name: 'Broadcast Message',
+        senderId: adminId,
+        receiverIds: receiverIds,
+        message: message
+      });
+
+      await groupMessage.save();
+
+      sellers.forEach(seller => {
+        if (seller.socketId) {
+          io.to(seller.socketId).emit('broadcast message', { adminId, message });
+        }
+      });
+    } catch (error) {
+      console.error('Error broadcasting message:', error);
+    }
+  });
+
+  // Remove seller's socket ID when they disconnect
+  socket.on('disconnect', async () => {
+    console.log('Client disconnected', socket.id);
+    await Seller.updateMany({ socketId: socket.id }, { $unset: { socketId: 1 } });
   });
 });
 
@@ -122,6 +159,6 @@ app.use((err, req, res, next) => {
 
 // Start the server
 const port = config.port;
-server.listen(port, () => { // <-- Changed from app.listen to server.listen
+server.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });

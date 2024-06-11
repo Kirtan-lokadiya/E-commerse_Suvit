@@ -1,8 +1,11 @@
 const express = require('express');
 const userController = require('../controllers/userController');
+const productController = require('../controllers/productController');
 const authMiddleware = require('../middlewares/authMiddleware');
+const sellerMiddleware = require('../middlewares/sellerMiddleware');
 const { body } = require('express-validator');
 const validationMiddleware = require('../middlewares/validationMiddleware');
+const isAdmin = require('../middlewares/isAdmin');
 
 const router = express.Router();
 
@@ -26,7 +29,10 @@ router.put('/update-location',
 
 
 router.get('/details',authMiddleware, userController.getUserDetails);
-router.get('/search',authMiddleware, userController.searchUsers);
+router.get('/search',authMiddleware, isAdmin, userController.searchUsers);
+router.put('/products/:productId',authMiddleware, isAdmin, productController.softDeleteProduct);
+
+router.put('/profile', sellerMiddleware, userController.updateSellerProfile);
 
 
 

@@ -41,7 +41,7 @@ router.put('/location',
 );
 
 router.get('/products', sellerMiddleware, productController.getSellerProducts);
-router.delete('/delete/:id', authMiddleware,isAdmin, sellerController.deleteSeller);
+router.put('/delete/:id', authMiddleware,isAdmin, sellerController.deleteSeller);
 
 
 

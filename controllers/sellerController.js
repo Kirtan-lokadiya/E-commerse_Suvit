@@ -1,6 +1,8 @@
 const sellerService = require('../services/sellerService');
 const { validationResult } = require('express-validator');
 const Sellers = require('../models/Seller');
+const Token = require('../models/Token');
+const mongoose = require('mongoose');
 
 const signup = async (req, res) => {
   const errors = validationResult(req);
@@ -55,7 +57,7 @@ const updatesellerLocation = async (req, res) => {
 const getAllSellers = async (req, res) => {
   try {
     // Query all sellers from the database and select only required fields
-    const sellers = await Sellers.find({}, 'firstName lastName email');
+    const sellers = await Sellers.find({deleted: false}, 'firstName lastName email');
 
     // Populate each seller's products
     await Sellers.populate(sellers, { path: 'products', model: 'Product' });
@@ -67,17 +69,29 @@ const getAllSellers = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
-
 const deleteSeller = async (req, res) => {
   try {
     const sellerId = req.params.id;
-    // Find the seller by ID and delete it
-    await Sellers.findByIdAndDelete(sellerId);
-    res.status(200).json({ message: 'Seller deleted successfully' });
+
+    // Find the seller by ID and set the deleted field to true for a soft delete
+    const seller = await Sellers.findByIdAndUpdate(sellerId, { deleted: true }, { new: true });
+
+    if (!seller) {
+      return res.status(404).json({ error: 'Seller not found' });
+    }
+
+    // Soft delete products associated with this seller
+    await mongoose.models.Product.updateMany({ seller: seller._id }, { $set: { deleted: true } });
+
+    // Find and hard delete the token associated with this seller
+    await Token.deleteOne({ userId: seller._id });
+
+    res.status(200).json({ message: 'Seller soft deleted successfully' });
   } catch (error) {
     console.error('Error deleting seller:', error);
     res.status(500).json({ error: 'Error deleting seller' });
   }
 };
+
 
 module.exports = { signup, login, updatesellerLocation,getAllSellers,deleteSeller };

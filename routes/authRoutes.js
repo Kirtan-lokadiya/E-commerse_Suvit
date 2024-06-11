@@ -23,8 +23,8 @@ router.post('/login',
   validationMiddleware,
   authController.login
 );
+router.post('/logoutseller', sellerMiddleware, authController.logout);
 router.post('/logout', authMiddleware, authController.logout);
-router.post('/logout', sellerMiddleware, authController.logout);
 
 
 module.exports = router;

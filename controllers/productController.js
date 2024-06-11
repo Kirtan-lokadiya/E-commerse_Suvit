@@ -1,6 +1,7 @@
 const productService = require('../services/productService');
 const Product = require('../models/Product');
 const User = require('../models/User');
+const Order = require('../models/Order');
 const Category = require('../models/Category');
 const path = require('path');
 const createProduct = async (req, res) => {
@@ -106,26 +107,30 @@ const updateProduct = async (req, res) => {
 
 const deleteProduct = async (req, res) => {
   try {
+    const sellerId = req.user._id; // Assuming the sellerMiddleware adds the seller's info to req.user
     const productId = req.params.id;
-    const sellerId = req.user._id; // Assuming the authenticated user is a seller
 
     // Find the product by ID and ensure it belongs to the seller
-    const product = await Product.findOne({ _id: productId, seller: sellerId });
+    const product = await Product.findOne({ _id: productId, seller: sellerId, deleted: false });
+
     if (!product) {
-      return res.status(404).json({ error: 'Product not found or not authorized to delete this product' });
+      return res.status(404).json({ error: 'Product not found or you are not authorized to delete this product' });
     }
 
-    // Delete the product
-    await Product.deleteOne({ _id: productId });
-    res.json({ message: 'Product deleted successfully' });
+    // Soft delete the product by setting the deleted field to true
+    product.deleted = true;
+    await product.save();
+
+    res.status(200).json({ message: 'Product deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error deleting product:', error);
+    res.status(500).json({ error: 'Error deleting product' });
   }
 };
+
 const getAllProducts = async (req, res) => {
   try {
     const { coordinates } = req.body;
- 
 
     const filters = {
       minPrice: req.query.minPrice || 0,
@@ -135,7 +140,8 @@ const getAllProducts = async (req, res) => {
       sortBy: req.query.sortBy || 'price',
       sortOrder: req.query.sortOrder || 'asc',
       page: parseInt(req.query.page, 10) || 1,
-      limit: parseInt(req.query.limit, 10) || 10
+      limit: parseInt(req.query.limit, 10) || 10,
+      deleted: false  ,
     };
 
     const result = await productService.getProductsByCustomerLocation(coordinates, filters);
@@ -145,8 +151,6 @@ const getAllProducts = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
-
 
 
 const getProductDetails = async (req, res) => {
@@ -170,7 +174,7 @@ const getTrendingProductsByCategory = async (req, res) => {
 
     for (const category of categories) {
       const trendingProducts = await Product.aggregate([
-        { $match: { category: category._id, featured: true } },
+        { $match: { category: category._id, featured: true,deleted: false } },
       ]);
 
       trendingProductsByCategory.push({
@@ -241,21 +245,21 @@ const getCartItems = async (req, res) => {
     // Fetch the authenticated user and populate the cart array with products
     const user = await User.findById(req.user.id).populate({
       path: 'cart.product', // Populate the 'product' field in the 'cart' array
-      model: 'Product'
+      model: 'Product',
     });
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Extract product details from the user's cart
-    const cartItems = user.cart.map(item => ({
+    // Filter out cart items where the corresponding products are not deleted
+    const cartItems = user.cart.filter(item => !item.product.deleted).map(item => ({
       _id: item.product._id, // Access the product ID
       name: item.product.name,
       description: item.product.description,
       price: item.product.price,
       imageUrls: item.product.imageUrls,
-      quantity: item.quantity // Include quantity in the response
+      quantity: item.quantity 
     }));
 
     res.status(200).json(cartItems);
@@ -266,9 +270,10 @@ const getCartItems = async (req, res) => {
 };
 
 
+
 const getAllProductsforAdmin = async (req, res) => {
   try {
-    const products = await Product.find({})
+    const products = await Product.find({deleted: false})
       .populate({
         path: 'seller',
         select: 'firstName lastName email'
@@ -281,12 +286,149 @@ const getAllProductsforAdmin = async (req, res) => {
     res.status(500).json({ error: 'Error fetching products' });
   }
 };
+const getTotalSalesBySeller = async (req, res) => {
+  try {
+    // Access sellerId from req.user directly
+    const sellerId = req.user._id;
+
+    // Fetch products associated with the seller
+    const products = await Product.find({ seller: sellerId }).select('_id');
+    const productIds = products.map(product => product._id.toString()); // Convert ObjectIds to strings
+
+    // Fetch orders containing products sold by the seller
+    const orders = await Order.find({ 'products.product': { $in: productIds } });
+
+    // Calculate total sales and count total orders
+    let totalSales = 0;
+    let totalOrders = 0;
+    
+    orders.forEach(order => {
+      let orderIncludesSellerProduct = false;
+      order.products.forEach(productItem => {
+        if (productIds.includes(productItem.product.toString())) { // Convert ObjectId to string for comparison
+          totalSales += productItem.price * productItem.quantity;
+          orderIncludesSellerProduct = true;
+        }
+      });
+      if (orderIncludesSellerProduct) {
+        totalOrders++;
+      }
+    });
+
+    res.status(200).json({ totalSales, totalOrders });
+  } catch (error) {
+    console.error('Error calculating total sales:', error);
+    res.status(500).json({ error: 'Something went wrong' });
+  }
+};
+
+const softDeleteProduct = async (req, res) => {
+  try {
+    const productId = req.params.productId;
+
+    const result = await Product.updateOne(
+      { _id: productId },
+      { $set: { deleted: true } }
+    );
+
+    if (result.nModified === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    res.status(200).json({ message: 'Product deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Something went wrong' });
+  }
+};
+const getOwnProducts = async (req, res) => {
+  try {
+    const sellerId = req.user._id; // Assuming the sellerMiddleware adds the seller's info to req.user
+
+    // Find all products associated with the seller and not deleted
+    const products = await Product.find({ seller: sellerId, deleted: false });
+
+    res.status(200).json(products);
+  } catch (error) {
+    console.error('Error fetching own products:', error);
+    res.status(500).json({ error: 'Error fetching own products' });
+  }
+};
+
+const updateProductByseller = async (req, res) => {
+  try {
+    const sellerId = req.user._id; 
+    const productId = req.params.id;
+    const updateData = req.body;
+
+    // Find the product by ID and ensure it belongs to the seller
+    const product = await Product.findOne({ _id: productId, seller: sellerId, deleted: false });
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found or you are not authorized to update this product' });
+    }
+
+    // Update the product with new data
+    Object.keys(updateData).forEach(key => {
+      product[key] = updateData[key];
+    });
+
+    await product.save();
+
+    res.status(200).json({ message: 'Product updated successfully' });
+  } catch (error) {
+    console.error('Error updating product:', error);
+    res.status(500).json({ error: 'Error updating product' });
+  }
+};
+
+const getOrdersForSeller = async (req, res) => {
+  try {
+    const sellerId = req.user._id;
+
+    // Fetch products associated with the seller
+    const products = await Product.find({ seller: sellerId }).select('_id name');
+    const productIds = products.map(product => product._id.toString()); // Convert ObjectIds to strings
+
+    // Fetch orders containing products sold by the seller
+    const orders = await Order.find({ 'products.product': { $in: productIds } })
+      .sort({ createdAt: -1 })
+      .populate('products.product');
+
+    // Filter orders to include only the seller's products and calculate total amount
+    const filteredOrders = orders.map(order => {
+      const sellerProducts = order.products.filter(productItem => productIds.includes(productItem.product._id.toString()));
+      const totalAmount = sellerProducts.reduce((sum, productItem) => sum + (productItem.price * productItem.quantity), 0);
+
+      return {
+        orderId: order._id,
+        totalAmount,
+        orderedAt: order.createdAt,
+        status: order.status,
+        products: sellerProducts.map(productItem => ({
+          name: productItem.product.name,
+          quantity: productItem.quantity,
+          price: productItem.price
+        }))
+      };
+    });
+
+    res.json({ orders: filteredOrders });
+  } catch (err) {
+    console.error('Error fetching orders for seller:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
+
+
+
 
 module.exports = {
   getAllProducts,
   getProductDetails,
   getCartItems,
-  
+  getTotalSalesBySeller,
   getTrendingProductsByCategory,
   createProduct,
   updateProduct,
@@ -295,5 +437,9 @@ module.exports = {
   getAllProductsforAdmin,
   addToCart,
   deleteFromCart,
-  updateCartItemQuantity  
+  updateCartItemQuantity  ,
+  softDeleteProduct,
+  getOwnProducts,
+  updateProductByseller,
+  getOrdersForSeller
 };

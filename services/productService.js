@@ -6,7 +6,7 @@ const getAllProducts = async () => {
 };
 
 const getProductsByCustomerLocation = async (coordinates, filters) => {
-  const { minPrice, maxPrice, categoryId, subcategoryId, sortBy, sortOrder, page, limit } = filters;
+  const { minPrice, maxPrice, categoryId, subcategoryId, sortBy, sortOrder, page, limit, deleted } = filters;
 
   // Step 1: Find sellers near the customer's location
   const sellers = await Seller.find({
@@ -26,7 +26,8 @@ const getProductsByCustomerLocation = async (coordinates, filters) => {
   // Step 2: Build the query for products
   const productQuery = {
     seller: { $in: sellerIds },
-    price: { $gte: minPrice, $lte: maxPrice }
+    price: { $gte: minPrice, $lte: maxPrice },
+    deleted: deleted || false
   };
 
   if (categoryId) {
@@ -61,7 +62,7 @@ const getProductsByCustomerLocation = async (coordinates, filters) => {
     totalProducts,
     totalPages: Math.ceil(totalProducts / limit),
     currentPage: page,
-    products // Return products directly without grouping
+    products
   };
 };
 

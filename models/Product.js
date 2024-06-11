@@ -10,6 +10,7 @@ const productSchema = new mongoose.Schema({
   seller: { type: mongoose.Schema.Types.ObjectId, ref: 'Seller', required: true },
   imageUrls: [{type: String }],
   featured: { type: Boolean },
+  deleted: { type: Boolean, default: false } ,
   brand: { type: String }, 
 }, { timestamps: true });
 

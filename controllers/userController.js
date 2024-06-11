@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const ChatMessage = require('../models/ChatMessage'); 
+const Sellers = require('../models/Seller'); 
 const { validationResult } = require('express-validator');
 const mongoose = require('mongoose');
 
@@ -119,19 +120,51 @@ const getUserDetails = async (req, res) => {
 const searchUsers = async (req, res) => {
   try {
     const { query } = req.query;
+
+    // Exclude users with the role 'admin' from the query
     const users = await User.find({
-      $or: [
-        { firstName: { $regex: query, $options: 'i' } },
-        { lastName: { $regex: query, $options: 'i' } }
+      $and: [
+        {
+          $or: [
+            { firstName: { $regex: query, $options: 'i' } },
+            { lastName: { $regex: query, $options: 'i' } }
+          ]
+        },
+        { role: { $ne: 'admin' } }
       ]
     });
+
     res.json(users);
   } catch (error) {
     console.error('Error searching users:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
-module.exports = { updateUserProfile, updateUserLocation, getUserDetails,searchUsers };
+const updateSellerProfile = async (req, res) => {
+  try {
+    const sellerId = req.user._id; 
+
+    const { firstName, lastName, phone, bankName, accountNumber, photo } = req.body;
+
+    // Find the seller by ID and update the provided fields
+    const updatedSeller = await Sellers.findByIdAndUpdate(
+      sellerId,
+      { firstName, lastName, phone, bankName, accountNumber, photo },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedSeller) {
+      return res.status(404).json({ error: 'Seller not found' });
+    }
+
+    res.status(200).json({ message: 'Profile updated successfully', seller: updatedSeller });
+  } catch (error) {
+    console.error('Error updating seller profile:', error);
+    res.status(500).json({ error: 'Error updating seller profile' });
+  }
+};
+
+module.exports = { updateUserProfile, updateUserLocation, getUserDetails,searchUsers,updateSellerProfile };
 
 
 

@@ -4,7 +4,10 @@ const Product = require('../models/Product');
 // Get Wishlist
 const getWishlist = async (req, res) => {
   try {
-    const wishlist = await Wishlist.findOne({ user: req.user._id }).populate('products');
+    const wishlist = await Wishlist.findOne({ user: req.user._id }).populate({
+      path: 'products',
+      match: { deleted: false }
+    });
     if (!wishlist) {
       return res.status(404).json({ error: 'Wishlist not found' });
     }
