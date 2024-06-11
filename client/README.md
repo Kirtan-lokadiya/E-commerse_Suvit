@@ -28,17 +28,18 @@ The project is structured into several React components, each representing a dif
 
 To install the project, you need to have Node.js and npm installed on your machine. Then, you can clone the repository and install the dependencies:
 
-bash
+```bash
 git clone <repository-url>
 cd <project-directory>
 npm install
+```
 
 
 To start the development server, run:
 
-bash
+```bash
 npm start
-
+```
 
 ## Usage
 
