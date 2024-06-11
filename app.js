@@ -73,7 +73,7 @@ io.on('connection', (socket) => {
       if (updatedSeller) {
         console.log(`Seller ${sellerId} registered with socket ID ${socket.id}`);
       } else {
-        console.log(`Seller with ID ${sellerId} not found or connection through admin`);
+        console.log(`Seller with ID ${sellerId} not found or connection through Admin`);
       }
     } catch (error) {
       console.error('Error registering seller:', error);

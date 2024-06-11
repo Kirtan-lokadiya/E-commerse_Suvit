@@ -1,0 +1,131 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
+}
+
+.outlet-container {
+  background-image: url("https://media.istockphoto.com/id/1309279439/photo/making-payments-the-simple-way.webp?b=1&s=170667a&w=0&k=20&c=G2sJ4ZZanF7rfROgk4ie6ZTT6s5Q6bouWKFEu_0OcxU=");
+  background-size: cover;
+  background-repeat: no-repeat;
+  height: 70vh; /* Full viewport height */
+  width: 98.9vw; /* Full viewport width */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  text-align: center;
+  padding: 0px;
+  margin: 0px;
+  opacity: 0.9;
+}
+
+.outlet-container h1 {
+  font-size: 2.5rem;
+  font-weight: bold;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.outlet-info {
+  height: 21vh;
+  background-color: #a0deff;
+  padding: 2rem;
+}
+
+.outlet-info h3 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.outlet-info p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.review-display {
+  padding: 1rem;
+}
+
+.review-stats {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 1rem;
+}
+.group-stars-per {
+  display: flex;
+  /* justify-content: center; */
+}
+.number-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100px;
+  height: 30px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.decrement-button,
+.increment-button {
+  background-color: #ddd;
+  border: none;
+  cursor: pointer;
+  padding: 0 5px;
+}
+
+.number-display {
+  font-size: 16px;
+  font-weight: bold;
+}
+.address-cols {
+  margin-top: 1rem;
+}
+
+.wishlist-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  /* height: 450px; Adjust the height as needed */
+}
+
+.wishlist-card-img-top {
+  /* height: 200px; Adjust the image height as needed */
+  object-fit: cover;
+}
+
+.wishlist-card-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.pagination-style {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.admin-seller-card {
+  height: 200px;
+  color: #a0deff !important;
+}
+.admin-product-card{
+  height: 250px;
+}
+
+
+.same-size-card img {
+  height: 300px;
+  object-fit: cover;
+}
