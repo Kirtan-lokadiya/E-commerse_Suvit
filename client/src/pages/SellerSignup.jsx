@@ -314,6 +314,7 @@ export default function SellerSignup() {
                   label="Account Number"
                 />
               </Grid>
+                <Typography>**Size of photo must be less than 30KB**</Typography>
               <Grid item xs={12}>
                 <MDBInput type="file" onChange={(e) => handleImageUpload(e)} />
               </Grid>
