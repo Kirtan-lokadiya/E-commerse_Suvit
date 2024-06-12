@@ -31,13 +31,19 @@ const server = http.createServer(app);
 const io = socketio(server, {
   pingTimeout: 60000,
   cors: {
-    origin: ['http://192.168.20.169:3000', 'http://localhost:3000']
+    origin: [
+      'http://192.168.20.169:3000', 
+      'http://localhost:3000',
+      'https://e-commerce-suvit.onrender.com' // Add your deployed domain here
+    ]
   }
 });
 
+
 app.use(cors({
-  origin: ['http://192.168.20.169:3000', 'http://localhost:3000']
+  origin: ['http://192.168.20.169:3000', 'http://localhost:3000', 'https://e-commerce-suvit.onrender.com']
 }));
+
 
 // Middleware
 app.use(bodyParser.json());

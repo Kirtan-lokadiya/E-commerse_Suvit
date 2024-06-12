@@ -12,7 +12,7 @@ const getMessages = async (req, res) => {
   }
 
   try {
-    const customerObjectId = new mongoose.Types.ObjectId(customerId);
+     const customerObjectId = new mongoose.Types.ObjectId(customerId);
     const adminObjectId = new mongoose.Types.ObjectId(adminId);
 
     // Fetch chat history between the specific customer and admin
