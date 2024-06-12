@@ -89,9 +89,13 @@ io.on('connection', (socket) => {
   socket.on('chat message', async (msg) => {
     const { senderId, receiverId, message } = msg;
 
+    const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
+    if (!isValidObjectId(senderId) || !isValidObjectId(receiverId)) {
+      return res.status(400).json({ error: 'Invalid senderId or receiverId' });
+    }
     try {
-      const senderObjectId = mongoose.Types.ObjectId(senderId);
-      const receiverObjectId = mongoose.Types.ObjectId(receiverId);
+      const senderObjectId = new mongoose.Types.ObjectId(senderId);
+      const receiverObjectId = new mongoose.Types.ObjectId(receiverId);
 
       const chatMessage = new ChatMessage({
         senderId: senderObjectId,
