@@ -1,15 +1,19 @@
 const mongoose = require('mongoose');
 const ChatMessage = require('../models/ChatMessage');
-const Seller = require('../models/Seller');
 const Group = require('../models/GroupSchema');
+
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 const getMessages = async (req, res) => {
   const { customerId, adminId } = req.params;
 
+  if (!isValidObjectId(customerId) || !isValidObjectId(adminId)) {
+    return res.status(400).json({ error: 'Invalid customerId or adminId' });
+  }
 
   try {
-    const customerObjectId =  customerId;
-    const adminObjectId =  adminId;
+    const customerObjectId = new mongoose.Types.ObjectId(customerId);
+    const adminObjectId = new mongoose.Types.ObjectId(adminId);
 
     // Fetch chat history between the specific customer and admin
     const chatHistory = await ChatMessage.find({
@@ -18,6 +22,7 @@ const getMessages = async (req, res) => {
         { senderId: adminObjectId, receiverId: customerObjectId }
       ]
     }).sort({ timestamp: 'asc' });
+
     res.json(chatHistory);
   } catch (error) {
     console.error('Error fetching chat history:', error);
@@ -40,10 +45,7 @@ const getBroadcastMessages = async (req, res) => {
   }
 };
 
-
-
 module.exports = {
   getMessages,
-
   getBroadcastMessages
 };

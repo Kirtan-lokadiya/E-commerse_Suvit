@@ -9,7 +9,6 @@ import axiosInstance from "../../axiosInstance";
 import { useSelector } from "react-redux";
 
 function UpdateProduct({ id }) {
-  const [product, setProduct] = React.useState({});
   const authState = useSelector((state) => state.auth);
   const [productDetails, setProductDetails] = React.useState({
     name: "",
@@ -35,7 +34,6 @@ function UpdateProduct({ id }) {
     const getProduct = async () => {
       try {
         const data = await fetchProductById(id);
-        setProduct(data);
         setProductDetails({
           name: data.name,
           description: data.description,
