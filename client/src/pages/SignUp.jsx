@@ -268,8 +268,8 @@ export default function SignUp() {
                   id="phoneNumber"
                   label="Phone Number without country code"
                 />
-              <Typography>**Size of photo must be less than 30KB**</Typography>
               </Grid>
+              <Typography>**Size of photo must be less than 30KB**</Typography>
               <Grid item xs={12}>
                 <MDBInput type="file" onChange={(e) => handleImageUpload(e)} />
               </Grid>
