@@ -34,14 +34,15 @@ const io = socketio(server, {
     origin: [
       'http://192.168.20.169:3000', 
       'http://localhost:3000',
-      'https://e-commerce-suvit.onrender.com' // Add your deployed domain here
+      'https://e-commerce-suvit.onrender.com',
+      'https://e-commerse-suvit-4cusqv2gs-kirtan-lokadiyas-projects.vercel.app/'
     ]
   }
 });
 
 
 app.use(cors({
-  origin: ['http://192.168.20.169:3000', 'http://localhost:3000', 'https://e-commerce-suvit.onrender.com']
+  origin: ['http://192.168.20.169:3000', 'http://localhost:3000', 'https://e-commerce-suvit.onrender.com','https://e-commerse-suvit-4cusqv2gs-kirtan-lokadiyas-projects.vercel.app/']
 }));
 
 
