@@ -95,7 +95,7 @@ const handlePaymentSuccess = async (req, res) => {
     await user.save();
 
     // Redirect to payment success page with the payment link ID
-    res.redirect(`http://localhost:3000/payment/success/${razorpay_payment_link_id}`);
+    res.redirect(`https://e-commerse-suvit-git-main-kirtan-lokadiyas-projects.vercel.app/payment/success/${razorpay_payment_link_id}`);
   } catch (error) {
     console.error('Error handling payment success:', error);
     res.status(500).json({ error: 'Internal Server Error' });
