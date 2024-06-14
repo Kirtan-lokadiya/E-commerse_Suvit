@@ -35,7 +35,7 @@ const createPaymentLink = async (userId, cart) => {
         email: user.email,
         contact: user.phone
       },
-      callback_url: `http://192.168.20.173:5000/api/payment/success?user_id=${userId}`, 
+      callback_url: `https://e-commerce-suvit.onrender.com/api/payment/success?user_id=${userId}`, 
       callback_method: 'get'
     };
 
