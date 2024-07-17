@@ -90,3 +90,12 @@ Welcome to my GitHub repository for the Summer Internship 2024! This project sho
   /models            # Mongoose models for MongoDB
   /routes            # Express routes for API endpoints
   /controllers       # Controllers for handling business logic
+```  
+## 🔗 Live Demo
+
+Check out the live demo of the project: https://drive.google.com/file/d/1-nvbMVRciQkbn7qoZz8Z3ayBczKjdYpQ/view?usp=drive_link
+
+## 📞 Connect with Me
+
+- **LinkedIn:** https://www.linkedin.com/in/kirtanlokadiya/
+- **Email:** kirtanlokadiya998@gmail.com
