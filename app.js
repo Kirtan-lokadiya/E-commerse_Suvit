@@ -43,8 +43,16 @@ const io = socketio(server, {
 
 
 app.use(cors({
-  origin: ['http://192.168.20.169:3000', 'http://localhost:3000', 'https://e-commerce-suvit.onrender.com','https://e-commerse-suvit-git-main-kirtan-lokadiyas-projects.vercel.app']
+  origin: [
+    'http://192.168.20.169:3000', 
+    'http://localhost:3000', 
+    'https://e-commerce-suvit.onrender.com',
+    'https://e-commerse-suvit-git-main-kirtan-lokadiyas-projects.vercel.app',
+    'https://e-commerse-suvit.vercel.app'  // Add this missing origin
+  ],
+  credentials: true  // If you're using cookies or credentials
 }));
+
 
 
 // Middleware
